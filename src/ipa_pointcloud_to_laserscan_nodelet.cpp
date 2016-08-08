@@ -262,7 +262,7 @@ namespace pointcloud_to_laserscan
     }
     else
     {
-      output.ranges.assign(ranges_size, output.range_max + 1.0);
+      output.ranges.assign(ranges_size, output.range_max - 1.0);
     }
 
     // Iterate through pointcloud
