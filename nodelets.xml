@@ -21,3 +21,15 @@
   </class>
 
 </library>
+
+<library path="lib/libroi_outlier_removal">
+
+  <class name="pointcloud_to_laserscan/RoiOutlierRemovalNodelet"
+   type="pointcloud_to_laserscan::RoiOutlierRemovalNodelet"
+   base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet to remove all points not witin the defined field of view. The remaining points are published to a new pointcloud.
+    </description>
+  </class>
+
+</library>

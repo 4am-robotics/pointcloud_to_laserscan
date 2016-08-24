@@ -6,22 +6,33 @@ find_package(catkin REQUIRED COMPONENTS
   nodelet
   roscpp
   sensor_msgs
+  tf
   tf2
   tf2_ros
   tf2_sensor_msgs
   tf2_geometry_msgs
+  pcl_ros
 )
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES pointcloud_to_laserscan ipa_pointcloud_to_laserscan
-  CATKIN_DEPENDS roscpp message_filters nodelet sensor_msgs tf2 tf2_ros tf2_sensor_msgs tf2_geometry_msgs
+  LIBRARIES pointcloud_to_laserscan ipa_pointcloud_to_laserscan roi_outlier_removal
+  CATKIN_DEPENDS roscpp message_filters nodelet sensor_msgs tf2 tf2_ros tf2_sensor_msgs tf2_geometry_msgs pcl_ros
 )
 
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
 )
+
+add_library(frame_publisher src/frame_publisher.cpp)
+target_link_libraries(frame_publisher ${catkin_LIBRARIES})
+
+add_executable(frame_publisher_node src/frame_publisher_node.cpp)
+target_link_libraries(frame_publisher_node frame_publisher ${catkin_LIBRARIES})
+
+add_library(roi_outlier_removal src/roi_outlier_removal_nodelet.cpp)
+target_link_libraries(roi_outlier_removal ${catkin_LIBRARIES})
 
 add_library(pointcloud_to_laserscan src/pointcloud_to_laserscan_nodelet.cpp)
 target_link_libraries(pointcloud_to_laserscan ${catkin_LIBRARIES})

@@ -35,12 +35,11 @@
  */
 
 /*
- * Author: Paul Bovbel
  * Author: Sofie Nilsson
  */
 
-#ifndef IPA_POINTCLOUD_TO_LASERSCAN_POINTCLOUD_TO_LASERSCAN_NODELET
-#define IPA_POINTCLOUD_TO_LASERSCAN_POINTCLOUD_TO_LASERSCAN_NODELET
+#ifndef ROI_OUTLIER_REMOVAL_NODELET
+#define ROI_OUTLIER_REMOVAL_NODELET
 
 #include "ros/ros.h"
 #include "boost/thread/mutex.hpp"
@@ -52,21 +51,27 @@
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include "sensor_msgs/PointCloud2.h"
-#include <pointcloud_to_laserscan/scan_outlier_removal_filter.h>
 
+// includes for pcl filtering
+#include <pcl_ros/point_cloud.h>
 
 namespace pointcloud_to_laserscan
 {
   typedef tf2_ros::MessageFilter<sensor_msgs::PointCloud2> MessageFilter;
 /**
-* Class to process incoming pointclouds into laserscans. Some initial code was pulled from the defunct turtlebot
-* pointcloud_to_laserscan implementation.
+* The ROI outlier removal removes all points outside the specified region of interest (ROI) and publishes the remaining points into a new pointcloud.
+* The roi is defined as a z value range, angle range in the xy plane, and a max and min range in the xyy plane, for a chosen frame.
+* The filter converts the roi borders to to the original pointcloud frame in order to not have to waist time on transforming points 
+* that are not to be used later on.
+* The points within the roi are transformed to and published in the same frame as the borders were given.
+* The filter is relevant to the pointcloud to laserscan transformation since it creates a possibility to apply additional statistical filtering
+* to a reduced pointcloud before creating the scan. The loclation of this filter within the pointcloud to laserscan package is however questionable.
 */
-  class IpaPointCloudToLaserScanNodelet : public nodelet::Nodelet
+  class RoiOutlierRemovalNodelet : public nodelet::Nodelet
   {
 
   public:
-    IpaPointCloudToLaserScanNodelet();
+    RoiOutlierRemovalNodelet();
     void configure_filter();
 
   private:
@@ -74,27 +79,25 @@ namespace pointcloud_to_laserscan
 
     void cloudCb(const sensor_msgs::PointCloud2ConstPtr &cloud_msg);
 
-    void convert_pointcloud_to_laserscan(const sensor_msgs::PointCloud2ConstPtr &cloud, sensor_msgs::LaserScan &output, const tf2::Transform &T, const double range_min );
+    void reduce_point_cloud_to_roi(const pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud,  
+                                  pcl::PointCloud<pcl::PointXYZ>::Ptr reduced_pcl_cloud,
+                                  const tf2::Transform &T);
 
     ros::NodeHandle nh_, private_nh_;
     ros::Publisher pub_;
-    boost::mutex connect_mutex_;
 
     boost::shared_ptr<tf2_ros::Buffer> tf2_;
     boost::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
 	ros::Subscriber sub_;
 
-    scan_outlier_filter::ScanOutlierRemovalFilter outlier_filter_;
     // ROS Parameters
     unsigned int input_queue_size_;
-    std::string target_frame_;
+    std::string roi_def_frame_;
     double tolerance_;
-    double min_height_, max_height_, angle_min_, angle_max_, angle_increment_, scan_time_, range_min_, range_max_;
-    bool use_inf_;
-    bool use_outlier_filter_;
+    double min_height_, max_height_, angle_min_, angle_max_, angle_increment_, range_min_, range_max_;    
   };
 
-}  // pointcloud_to_laserscan
+}  // roi_outlier_removal
 
-#endif  // IPA_POINTCLOUD_TO_LASERSCAN_POINTCLOUD_TO_LASERSCAN_NODELET
+#endif  // ROI_OUTLIER_REMOVAL_NODELET
