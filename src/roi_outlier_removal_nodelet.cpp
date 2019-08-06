@@ -38,7 +38,7 @@
 /*
  * Author: Sofie Nilsson
  */
- 
+
 
 #include <pointcloud_to_laserscan/roi_outlier_removal.h>
 #include <pluginlib/class_list_macros.h>
@@ -118,7 +118,7 @@ void RoiOutlierRemovalNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPtr &c
   // does not do anything if the problem dies not occur -> leave for compatibility
   std::string cloud_frame_id = cloud_msg->header.frame_id;
   if(cloud_frame_id.find_first_of("/") == 0)
-  { 
+  {
     cloud_frame_id.erase(0,1);
   }
 
@@ -178,13 +178,13 @@ void RoiOutlierRemovalNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPtr &c
 
   NODELET_DEBUG_STREAM("Transform and publish finished");
 }
-  
+
 /**
  * Function to find the points within the defined region of interest and add those to the reduced_cloud.
  * The borders given in specified fame is transformed to the pc frame to avoid unnessecaric point transformations.
  * The reduced cloud in in the same frame as the original cloud, no transformation included!
  */
-void RoiOutlierRemovalNodelet::reduce_point_cloud_to_roi(const pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud,  
+void RoiOutlierRemovalNodelet::reduce_point_cloud_to_roi(const pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud,
                                                          pcl::PointCloud<pcl::PointXYZ>::Ptr reduced_pcl_cloud,
                                                          const tf2::Transform &T)
 {
@@ -218,7 +218,7 @@ void RoiOutlierRemovalNodelet::reduce_point_cloud_to_roi(const pcl::PointCloud<p
   std::vector<int> indices;
   pcl::removeNaNFromPointCloud(*pcl_cloud,*pcl_cloud, indices);
   indices.clear();
-    
+
   int n_points = pcl_cloud->size();
 
   // Declare help variables for point selection
@@ -287,4 +287,4 @@ void RoiOutlierRemovalNodelet::reduce_point_cloud_to_roi(const pcl::PointCloud<p
   }
 }
 
-PLUGINLIB_DECLARE_CLASS(roi_outlier_removal, RoiOutlierRemovalNodelet, pointcloud_to_laserscan::RoiOutlierRemovalNodelet, nodelet::Nodelet);
+PLUGINLIB_EXPORT_CLASS(pointcloud_to_laserscan::RoiOutlierRemovalNodelet, nodelet::Nodelet);

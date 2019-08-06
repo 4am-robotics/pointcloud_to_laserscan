@@ -132,7 +132,7 @@ void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2Cons
   // does not do anything if the problem dies not occur -> leave for compatibility
   std::string cloud_frame_id = cloud_msg->header.frame_id;
   if(cloud_frame_id.find_first_of("/") == 0)
-  { 
+  {
     cloud_frame_id.erase(0,1);
   }
 
@@ -205,15 +205,15 @@ void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2Cons
   NODELET_DEBUG_STREAM("Transform and publisch for scan took " << dur.toSec());
 }
 
-/** 
- * Function to project the pointcloud points within specified region to 
+/**
+ * Function to project the pointcloud points within specified region to
  * the laser scan frame and fill out the laserscan message with the relevant ranges
  * from the projection.
- * Theborders for the point selection is transformed into pointcloud frame in order 
+ * Theborders for the point selection is transformed into pointcloud frame in order
  * save time by avoiding unnessecairy point transformations
  */
-void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sensor_msgs::PointCloud2ConstPtr &cloud, 
-                                                                      sensor_msgs::LaserScan &output, 
+void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sensor_msgs::PointCloud2ConstPtr &cloud,
+                                                                      sensor_msgs::LaserScan &output,
                                                                       const tf2::Transform &T, const double range_min )
 {
   // Transform borders and target plane to original coordinates (saved resources to not have to transform the whole point cloud)
@@ -308,4 +308,4 @@ void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sens
   }
 }
 
-PLUGINLIB_DECLARE_CLASS(ipa_pointcloud_to_laserscan, IpaPointCloudToLaserScanNodelet, pointcloud_to_laserscan::IpaPointCloudToLaserScanNodelet, nodelet::Nodelet);
+PLUGINLIB_EXPORT_CLASS(pointcloud_to_laserscan::IpaPointCloudToLaserScanNodelet, nodelet::Nodelet);
