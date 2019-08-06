@@ -2,6 +2,14 @@
 Changelog for package pointcloud_to_laserscan
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#13 <https://github.com/ipa320/pointcloud_to_laserscan/issues/13>`_ from benmaidel/feature/melodify
+  [Melodic] replaced deprecated pluginlib export macro
+* update travis.yml, add kinetic and melodic checks
+* replaced deprecated pluginlib export macro
+* Contributors: Benjamin Maidel, Felix Messmer, fmessmer
+
 1.3.1 (2019-03-14)
 ------------------
 * Merge pull request `#12 <https://github.com/ipa320/pointcloud_to_laserscan/issues/12>`_ from ipa-fxm/review_frame_publisher
