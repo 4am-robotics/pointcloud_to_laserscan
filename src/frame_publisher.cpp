@@ -37,6 +37,7 @@
 
 /*
  * Author: Sofie Nilsson
+ * Author: Thomas Lindemeier
  */
  
 #include <pointcloud_to_laserscan/frame_publisher.h>
@@ -52,11 +53,13 @@ bool FramePublisher::initialize()
 {
   priv_nh_ = ros::NodeHandle("~");
 
-  priv_nh_.param<double>("update_rate", update_rate_, 0.01); // 100Hz
+  priv_nh_.param<double>("update_rate", update_rate_, 0.01);  // 100Hz
 
-  priv_nh_.param<std::string>("base_frame", base_frame_, "base_link");
-  priv_nh_.param<std::string>("rotation_frame", rotation_frame_, "torso_center_link");
-  priv_nh_.param<std::string>("target_frame", target_frame_, "torso_rotated_base_link");
+  priv_nh_.param<std::string>("from_frame", from_frame_, "base_link");
+  priv_nh_.param<std::string>("to_frame", to_frame_, "torso_center_link");
+  priv_nh_.param<std::string>("frame_name", frame_name_, "torso_rotated_base_link");
+
+  priv_nh_.param<bool>("use_to_frame_translation", use_to_frame_translation_, true);
 
   priv_nh_.param<bool>("rot_z", rot_z_, false);
   priv_nh_.param<bool>("rot_x", rot_x_, false);
@@ -64,25 +67,25 @@ bool FramePublisher::initialize()
 
   frame_broadcast_timer_ = nh_.createTimer(ros::Duration(update_rate_), &FramePublisher::frameBroadcastCallback, this);
 
-  ros::Duration(1.0).sleep(); //give tf_listener some time
+  ros::Duration(1.0).sleep();  // give tf_listener some time
 
   return true;
 }
 
-/// Broadcast a frame aligned with the base frame but rotated around specified axes as rotation_frame 
+/// Broadcast a frame aligned with the base frame but rotated around specified axes as rotation_frame
 void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
 {
   ros::Time time = event.current_real;
   geometry_msgs::TransformStamped transform_msg;
-  try{
-    transform_msg = tf_buffer_.lookupTransform(base_frame_, rotation_frame_, time, ros::Duration(0.1));
-  }
-  catch(tf2::TransformException &ex)
+  try
   {
-    ROS_ERROR("FramePublisher::frameBroadcastCallback: \n%s",ex.what());
+    transform_msg = tf_buffer_.lookupTransform(from_frame_, to_frame_, time, ros::Duration(0.1));
+  }
+  catch (tf2::TransformException& ex)
+  {
+    ROS_ERROR("FramePublisher::frameBroadcastCallback: \n%s", ex.what());
     return;
   }
-  //ROS_WARN_STREAM("FramePublisher::frameBroadcastCallback: \n" << transform_msg);
 
   tf2::Stamped<tf2::Transform> transform_tf;
   tf2::fromMsg(transform_msg, transform_tf);
@@ -90,20 +93,19 @@ void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
   transform_tf.getBasis().getRPY(rot_frame_roll, rot_frame_pitch, rot_frame_yaw);
 
   // Use rotations according to settings
-  double target_frame_roll = 0;
-  double target_frame_pitch = 0;
-  double target_frame_yaw = 0; 
-  if (rot_z_){ target_frame_yaw = rot_frame_yaw;}
-  if (rot_x_){ target_frame_roll = rot_frame_roll;}
-  if (rot_y_){ target_frame_pitch = rot_frame_pitch;}
+  double published_frame_roll = 0;
+  double published_frame_pitch = 0;
+  double published_frame_yaw = 0;
+  if (rot_x_){ published_frame_roll = rot_frame_roll; }
+  if (rot_y_){ published_frame_pitch = rot_frame_pitch; }
+  if (rot_z_){ published_frame_yaw = rot_frame_yaw; }
 
-  tf2::Stamped<tf2::Transform> target_tf(transform_tf);  //keep header
-  target_tf.setOrigin(tf2::Vector3(0,0,0));
-  target_tf.getBasis().setRPY(target_frame_roll, target_frame_pitch, target_frame_yaw);
+  tf2::Stamped<tf2::Transform> published_tf(transform_tf);  // keep header and translation
+  if (!use_to_frame_translation_){ published_tf.setOrigin(tf2::Vector3(0,0,0)); }
+  published_tf.getBasis().setRPY(published_frame_roll, published_frame_pitch, published_frame_yaw);
 
   // Broadcast new frame
-  geometry_msgs::TransformStamped target_msg = tf2::toMsg(target_tf);
-  target_msg.child_frame_id = target_frame_;
-  //ROS_ERROR_STREAM("FramePublisher::frameBroadcastCallback: \n" << target_msg);
-  tf_broadcaster_.sendTransform(target_msg);
+  geometry_msgs::TransformStamped published_msg = tf2::toMsg(published_tf);
+  published_msg.child_frame_id = frame_name_;
+  tf_broadcaster_.sendTransform(published_msg);
 }

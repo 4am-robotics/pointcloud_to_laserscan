@@ -36,6 +36,7 @@
 
 /*
  * Author: Sofie Nilsson
+ * Author: Thomas Lindemeier
  */
 
 #ifndef FRAME_PUB_H
@@ -70,9 +71,10 @@ private:
 
   ros::Timer frame_broadcast_timer_;
   double update_rate_;
-  std::string base_frame_;
-  std::string rotation_frame_;
-  std::string target_frame_;
+  std::string from_frame_;
+  std::string to_frame_;
+  std::string frame_name_;
+  bool use_to_frame_translation_;
   bool rot_z_, rot_x_, rot_y_;
 };
 

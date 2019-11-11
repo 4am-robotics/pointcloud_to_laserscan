@@ -31,12 +31,6 @@ target_link_libraries(frame_publisher ${catkin_LIBRARIES})
 add_executable(frame_publisher_node src/frame_publisher_node.cpp)
 target_link_libraries(frame_publisher_node frame_publisher ${catkin_LIBRARIES})
 
-add_library(fixable_rotation_frame_publisher src/fixable_rotation_frame_publisher.cpp)
-target_link_libraries(fixable_rotation_frame_publisher ${catkin_LIBRARIES})
-
-add_executable(fixable_rotation_frame_publisher_node src/fixable_rotation_frame_publisher_node.cpp)
-target_link_libraries(fixable_rotation_frame_publisher_node fixable_rotation_frame_publisher ${catkin_LIBRARIES})
-
 add_library(roi_outlier_removal src/roi_outlier_removal_nodelet.cpp)
 target_link_libraries(roi_outlier_removal ${catkin_LIBRARIES})
 
