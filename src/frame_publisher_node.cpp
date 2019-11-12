@@ -37,6 +37,7 @@
 
 /*
  * Author: Sofie Nilsson
+ * Author: Thomas Lindemeier
  */
  
 #include <ros/ros.h>
@@ -44,10 +45,10 @@
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "msh_frame_publisher_node");
-  FramePublisher* ad = new FramePublisher();
+  ros::init(argc, argv, "frame_publisher_node");
+  FramePublisher fp;
 
-  if (!ad->initialize())
+  if (!fp.initialize())
   {
     ROS_ERROR("Failed to initialize FramePublisher");
     return -1;
