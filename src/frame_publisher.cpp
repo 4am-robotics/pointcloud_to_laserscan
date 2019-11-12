@@ -39,7 +39,7 @@
  * Author: Sofie Nilsson
  * Author: Thomas Lindemeier
  */
- 
+
 #include <pointcloud_to_laserscan/frame_publisher.h>
 
 FramePublisher::FramePublisher() :
@@ -72,7 +72,7 @@ bool FramePublisher::initialize()
   return true;
 }
 
-/// Broadcast a frame aligned with the base frame but rotated around specified axes as rotation_frame
+/// Broadcast a new frame based on a given transformation from_frame -> to_frame - resetting either translation and/or individual rotation axes to zero
 void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
 {
   ros::Time time = event.current_real;
@@ -80,6 +80,7 @@ void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
   try
   {
     transform_msg = tf_buffer_.lookupTransform(from_frame_, to_frame_, time, ros::Duration(0.1));
+    ROS_DEBUG_STREAM("FramePublisher::frameBroadcastCallback: transform_msg:\n" << transform_msg);
   }
   catch (tf2::TransformException& ex)
   {
@@ -108,4 +109,5 @@ void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
   geometry_msgs::TransformStamped published_msg = tf2::toMsg(published_tf);
   published_msg.child_frame_id = frame_name_;
   tf_broadcaster_.sendTransform(published_msg);
+  ROS_DEBUG_STREAM("FramePublisher::frameBroadcastCallback: published_msg:\n" << published_msg);
 }
