@@ -74,20 +74,7 @@ bool FramePublisher::initialize()
   return true;
 }
 
-void FramePublisher::frameUpdateCallback(const ros::TimerEvent& event)
-{
-  try
-  {
-    transform_msg_ = tf_buffer_.lookupTransform(from_frame_, to_frame_, ros::Time(0), ros::Duration(update_rate_));
-    ROS_DEBUG_STREAM("FramePublisher::frameUpdateCallback: transform_msg:\n" << transform_msg_);
-  }
-  catch (tf2::TransformException& ex)
-  {
-    ROS_ERROR("FramePublisher::frameUpdateCallback: \n%s", ex.what());
-  }
-}
-/// Broadcast a new frame based on a given transformation from_frame -> to_frame - resetting either translation and/or individual rotation axes to zero
-void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
+void FramePublisher::generateMessage()
 {
   tf2::Stamped<tf2::Transform> transform_tf;
   tf2::fromMsg(transform_msg_, transform_tf);
@@ -107,8 +94,27 @@ void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
   published_tf.getBasis().setRPY(published_frame_roll, published_frame_pitch, published_frame_yaw);
 
   // Broadcast new frame
-  geometry_msgs::TransformStamped published_msg = tf2::toMsg(published_tf);
-  published_msg.child_frame_id = frame_name_;
-  tf_broadcaster_.sendTransform(published_msg);
-  ROS_DEBUG_STREAM("FramePublisher::frameBroadcastCallback: published_msg:\n" << published_msg);
+  published_msg_ = tf2::toMsg(published_tf);
+  published_msg_.child_frame_id = frame_name_;
+}
+
+void FramePublisher::frameUpdateCallback(const ros::TimerEvent& event)
+{
+  try
+  {
+    transform_msg_ = tf_buffer_.lookupTransform(from_frame_, to_frame_, ros::Time(0), ros::Duration(update_rate_));
+    ROS_DEBUG_STREAM("FramePublisher::frameUpdateCallback: transform_msg:\n" << transform_msg_);
+    generateMessage();
+  }
+  catch (tf2::TransformException& ex)
+  {
+    ROS_ERROR("FramePublisher::frameUpdateCallback: \n%s", ex.what());
+  }
+}
+
+/// Broadcast a new frame based on a given transformation from_frame -> to_frame - resetting either translation and/or individual rotation axes to zero
+void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
+{
+  tf_broadcaster_.sendTransform(published_msg_);
+  ROS_DEBUG_STREAM("FramePublisher::frameBroadcastCallback: published_msg_:\n" << published_msg_);
 }

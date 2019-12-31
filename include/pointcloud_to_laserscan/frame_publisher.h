@@ -60,6 +60,7 @@ public:
   bool initialize();
 
 private:
+  void generateMessage();
   void frameUpdateCallback(const ros::TimerEvent& event);
   void frameBroadcastCallback(const ros::TimerEvent& event);
 
@@ -69,7 +70,7 @@ private:
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
   tf2_ros::TransformBroadcaster tf_broadcaster_;
-  geometry_msgs::TransformStamped transform_msg_;
+  geometry_msgs::TransformStamped transform_msg_, published_msg_;
 
   ros::Timer frame_broadcast_timer_, frame_update_timer_;
   double update_rate_, publish_rate_;
