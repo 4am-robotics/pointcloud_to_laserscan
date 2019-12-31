@@ -54,6 +54,7 @@ bool FramePublisher::initialize()
   priv_nh_ = ros::NodeHandle("~");
 
   priv_nh_.param<double>("update_rate", update_rate_, 0.01);  // 100Hz
+  priv_nh_.param<double>("publish_rate", publish_rate_, 0.01);  // 100Hz
 
   priv_nh_.param<std::string>("from_frame", from_frame_, "base_link");
   priv_nh_.param<std::string>("to_frame", to_frame_, "torso_center_link");
@@ -65,30 +66,31 @@ bool FramePublisher::initialize()
   priv_nh_.param<bool>("rot_x", rot_x_, false);
   priv_nh_.param<bool>("rot_y", rot_y_, false);
 
-  frame_broadcast_timer_ = nh_.createTimer(ros::Duration(update_rate_), &FramePublisher::frameBroadcastCallback, this);
+  frame_update_timer_ = nh_.createTimer(ros::Duration(update_rate_), &FramePublisher::frameUpdateCallback, this);
+  frame_broadcast_timer_ = nh_.createTimer(ros::Duration(publish_rate_), &FramePublisher::frameBroadcastCallback, this);
 
   ros::Duration(1.0).sleep();  // give tf_listener some time
 
   return true;
 }
 
-/// Broadcast a new frame based on a given transformation from_frame -> to_frame - resetting either translation and/or individual rotation axes to zero
-void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
+void FramePublisher::frameUpdateCallback(const ros::TimerEvent& event)
 {
-  geometry_msgs::TransformStamped transform_msg;
   try
   {
-    transform_msg = tf_buffer_.lookupTransform(from_frame_, to_frame_, ros::Time(0), ros::Duration(0.1));
-    ROS_DEBUG_STREAM("FramePublisher::frameBroadcastCallback: transform_msg:\n" << transform_msg);
+    transform_msg_ = tf_buffer_.lookupTransform(from_frame_, to_frame_, ros::Time(0), ros::Duration(update_rate_));
+    ROS_DEBUG_STREAM("FramePublisher::frameUpdateCallback: transform_msg:\n" << transform_msg_);
   }
   catch (tf2::TransformException& ex)
   {
-    ROS_ERROR("FramePublisher::frameBroadcastCallback: \n%s", ex.what());
-    return;
+    ROS_ERROR("FramePublisher::frameUpdateCallback: \n%s", ex.what());
   }
-
+}
+/// Broadcast a new frame based on a given transformation from_frame -> to_frame - resetting either translation and/or individual rotation axes to zero
+void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
+{
   tf2::Stamped<tf2::Transform> transform_tf;
-  tf2::fromMsg(transform_msg, transform_tf);
+  tf2::fromMsg(transform_msg_, transform_tf);
   double rot_frame_roll, rot_frame_pitch, rot_frame_yaw;
   transform_tf.getBasis().getRPY(rot_frame_roll, rot_frame_pitch, rot_frame_yaw);
 
