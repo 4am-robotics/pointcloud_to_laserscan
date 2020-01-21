@@ -108,7 +108,7 @@ void FramePublisher::frameUpdateCallback(const ros::TimerEvent& event)
   }
   catch (tf2::TransformException& ex)
   {
-    ROS_ERROR("FramePublisher::frameUpdateCallback: \n%s", ex.what());
+    ROS_ERROR_THROTTLE(1.0, "FramePublisher::frameUpdateCallback: \n%s", ex.what());
     return;
   }
   generateMessage();
