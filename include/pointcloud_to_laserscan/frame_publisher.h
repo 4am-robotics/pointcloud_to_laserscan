@@ -78,7 +78,7 @@ private:
   std::string to_frame_;
   std::string frame_name_;
   bool use_to_frame_translation_;
-  bool rot_z_, rot_x_, rot_y_;
+  bool rot_z_, rot_x_, rot_y_, message_generated_;
 };
 
 #endif  // FRAME_PUB_H

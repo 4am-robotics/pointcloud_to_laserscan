@@ -66,11 +66,11 @@ bool FramePublisher::initialize()
   priv_nh_.param<bool>("rot_x", rot_x_, false);
   priv_nh_.param<bool>("rot_y", rot_y_, false);
 
+  message_generated_ = false;
   frame_update_timer_ = nh_.createTimer(ros::Duration(update_rate_), &FramePublisher::frameUpdateCallback, this);
   frame_broadcast_timer_ = nh_.createTimer(ros::Duration(publish_rate_), &FramePublisher::frameBroadcastCallback, this);
 
   ros::Duration(1.0).sleep();  // give tf_listener some time
-
   return true;
 }
 
@@ -96,6 +96,7 @@ void FramePublisher::generateMessage()
   // Broadcast new frame
   published_msg_ = tf2::toMsg(published_tf);
   published_msg_.child_frame_id = frame_name_;
+  message_generated_ = true;
 }
 
 void FramePublisher::frameUpdateCallback(const ros::TimerEvent& event)
@@ -104,17 +105,21 @@ void FramePublisher::frameUpdateCallback(const ros::TimerEvent& event)
   {
     transform_msg_ = tf_buffer_.lookupTransform(from_frame_, to_frame_, ros::Time(0), ros::Duration(update_rate_));
     ROS_DEBUG_STREAM("FramePublisher::frameUpdateCallback: transform_msg:\n" << transform_msg_);
-    generateMessage();
   }
   catch (tf2::TransformException& ex)
   {
     ROS_ERROR("FramePublisher::frameUpdateCallback: \n%s", ex.what());
+    return;
   }
+  generateMessage();
 }
 
 /// Broadcast a new frame based on a given transformation from_frame -> to_frame - resetting either translation and/or individual rotation axes to zero
 void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
 {
-  tf_broadcaster_.sendTransform(published_msg_);
-  ROS_DEBUG_STREAM("FramePublisher::frameBroadcastCallback: published_msg_:\n" << published_msg_);
+  if(message_generated_)
+  {
+    ROS_DEBUG_STREAM("FramePublisher::frameBroadcastCallback: published msg:\n" << published_msg_);
+    tf_broadcaster_.sendTransform(published_msg_);
+  }
 }
