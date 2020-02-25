@@ -81,9 +81,29 @@ void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
     transform_msg = tf_buffer_.lookupTransform(from_frame_, to_frame_, ros::Time(0), ros::Duration(0.1));
     ROS_DEBUG_STREAM("FramePublisher::frameBroadcastCallback: transform_msg:\n" << transform_msg);
   }
-  catch (tf2::TransformException& ex)
+  catch (tf2::ConnectivityException& ex)
   {
-    ROS_DEBUG_THROTTLE(1.0, "FramePublisher::frameBroadcastCallback: \n%s", ex.what());
+    ROS_ERROR_THROTTLE(5.0, "FramePublisher::frameBroadcastCallback ConnectivityException: \n%s", ex.what());
+    return;
+  }
+  catch (tf2::ExtrapolationException& ex)
+  {
+    ROS_WARN_THROTTLE(5.0, "FramePublisher::frameBroadcastCallback ExtrapolationException: \n%s", ex.what());
+    return;
+  }
+  catch (tf2::InvalidArgumentException& ex)
+  {
+    ROS_ERROR("FramePublisher::frameBroadcastCallback InvalidArgumentException: \n%s", ex.what());
+    return;
+  }
+  catch (tf2::LookupException& ex)
+  {
+    ROS_WARN_THROTTLE(5.0, "FramePublisher::frameBroadcastCallback LookupException: \n%s", ex.what());
+    return;
+  }
+  catch (tf2::TimeoutException& ex)
+  {
+    ROS_WARN_THROTTLE(1.0, "FramePublisher::frameBroadcastCallback TimeoutException: \n%s", ex.what());
     return;
   }
 
