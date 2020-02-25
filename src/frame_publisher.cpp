@@ -83,7 +83,7 @@ void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
   }
   catch (tf2::TransformException& ex)
   {
-    ROS_ERROR("FramePublisher::frameBroadcastCallback: \n%s", ex.what());
+    ROS_DEBUG_THROTTLE(1.0, "FramePublisher::frameBroadcastCallback: \n%s", ex.what());
     return;
   }
 
