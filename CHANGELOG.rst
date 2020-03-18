@@ -2,8 +2,8 @@
 Changelog for package pointcloud_to_laserscan
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.3.3 (2020-03-18)
+------------------
 * Merge pull request `#19 <https://github.com/ipa320/pointcloud_to_laserscan/issues/19>`_ from lindemeier/fix/change_log_level_and_freq_avoiding_log_spam
   change log level and frequency
 * consistent log level and catching TransformException
