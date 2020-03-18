@@ -2,6 +2,30 @@
 Changelog for package pointcloud_to_laserscan
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#19 <https://github.com/ipa320/pointcloud_to_laserscan/issues/19>`_ from lindemeier/fix/change_log_level_and_freq_avoiding_log_spam
+  change log level and frequency
+* consistent log level and catching TransformException
+* catch each exception an handle them according to criticality
+* change log level and frequency
+* Merge pull request `#18 <https://github.com/ipa320/pointcloud_to_laserscan/issues/18>`_ from fmessmer/feature/python3_compatibility
+  [ci_updates] pylint + Python3 compatibility
+* activate pylint checks from feature branch
+* Merge pull request `#17 <https://github.com/ipa320/pointcloud_to_laserscan/issues/17>`_ from fmessmer/ci_updates
+  [travis] ci updates
+* sort travis.yml
+* add CATKIN_LINT=pedantic
+* update travis.yml
+* catkin_lint fixes
+* Merge pull request `#15 <https://github.com/ipa320/pointcloud_to_laserscan/issues/15>`_ from fmessmer/feature/frame_publisher_extended_combined
+  feature/frame publisher extended combined
+* use ros::Time(0) for lookupTransform
+* add debug info
+* combine and harmonize functionality
+* Added frame publisher that allows fixing rotations in transform from one frame to another
+* Contributors: Felix Messmer, fmessmer, tsl
+
 1.3.2 (2019-08-06)
 ------------------
 * Merge pull request `#13 <https://github.com/ipa320/pointcloud_to_laserscan/issues/13>`_ from benmaidel/feature/melodify
