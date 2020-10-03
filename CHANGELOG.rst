@@ -2,6 +2,16 @@
 Changelog for package pointcloud_to_laserscan
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#20 <https://github.com/ipa320/pointcloud_to_laserscan/issues/20>`_ from fmessmer/test_noetic
+  test noetic
+* add missing run_depend openni2_launch
+* use DOCKER_IMAGE=ros:noetic-perception
+* Bump CMake version to avoid CMP0048 warning
+* add noetic jobs
+* Contributors: Felix Messmer, fmessmer
+
 1.3.3 (2020-03-18)
 ------------------
 * Merge pull request `#19 <https://github.com/ipa320/pointcloud_to_laserscan/issues/19>`_ from lindemeier/fix/change_log_level_and_freq_avoiding_log_spam
