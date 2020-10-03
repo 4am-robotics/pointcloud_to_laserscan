@@ -2,8 +2,8 @@
 Changelog for package pointcloud_to_laserscan
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.3.4 (2020-10-03)
+------------------
 * Merge pull request `#20 <https://github.com/ipa320/pointcloud_to_laserscan/issues/20>`_ from fmessmer/test_noetic
   test noetic
 * add missing run_depend openni2_launch
