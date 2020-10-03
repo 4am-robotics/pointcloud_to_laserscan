@@ -38,6 +38,8 @@
     <run_depend>tf2_geometry_msgs</run_depend>
     <run_depend>pcl_ros</run_depend>
 
+    <run_depend>openni2_launch</run_depend>
+
     <export>
         <nodelet plugin="${prefix}/nodelets.xml"/>
     </export>
