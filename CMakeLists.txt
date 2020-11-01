@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME} ipa_${PROJECT_NAME} roi_outlier_removal
-  CATKIN_DEPENDS message_filters nodelet pcl_ros roscpp sensor_msgs tf2 tf2_geometry_msgs tf2_ros tf2_sensor_msgs
+  CATKIN_DEPENDS message_filters nodelet pcl_ros roscpp sensor_msgs tf tf2 tf2_geometry_msgs tf2_ros tf2_sensor_msgs
 )
 
 include_directories(
