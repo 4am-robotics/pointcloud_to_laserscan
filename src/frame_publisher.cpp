@@ -132,6 +132,7 @@ void FramePublisher::frameBroadcastCallback(const ros::TimerEvent& event)
   // Broadcast new frame
   geometry_msgs::TransformStamped published_msg = tf2::toMsg(published_tf);
   published_msg.child_frame_id = frame_name_;
+  published_msg.header.stamp = ros::Time::now();  //update stamp to avoid TF_REPEATED_DATA (noetic)
   tf_broadcaster_.sendTransform(published_msg);
   ROS_DEBUG_STREAM("FramePublisher::frameBroadcastCallback: published_msg:\n" << published_msg);
 }
