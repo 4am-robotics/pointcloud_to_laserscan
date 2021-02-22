@@ -76,6 +76,7 @@ private:
   std::string frame_name_;
   bool use_to_frame_translation_;
   bool rot_z_, rot_x_, rot_y_;
+  geometry_msgs::TransformStamped published_msg_;
 };
 
 #endif  // FRAME_PUB_H
