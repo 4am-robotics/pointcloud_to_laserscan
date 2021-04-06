@@ -2,8 +2,8 @@
 Changelog for package pointcloud_to_laserscan
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.3.5 (2021-04-06)
+------------------
 * Merge pull request `#22 <https://github.com/ipa320/pointcloud_to_laserscan/issues/22>`_ from fmessmer/fix/TF_REPEATED_DATA
   update stamp to avoid TF_REPEATED_DATA
 * only check stamp
