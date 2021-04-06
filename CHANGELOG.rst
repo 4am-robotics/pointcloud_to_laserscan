@@ -2,6 +2,19 @@
 Changelog for package pointcloud_to_laserscan
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#22 <https://github.com/ipa320/pointcloud_to_laserscan/issues/22>`_ from fmessmer/fix/TF_REPEATED_DATA
+  update stamp to avoid TF_REPEATED_DATA
+* only check stamp
+* only publish on updated transform to avoid TF_REPEATED_DATA
+* update stamp to avoid TF_REPEATED_DATA
+* update travis config
+* Merge pull request `#21 <https://github.com/ipa320/pointcloud_to_laserscan/issues/21>`_ from fmessmer/fix_catkin_lint
+  fix catkin_lint
+* fix catkin_lint
+* Contributors: Felix Messmer, fmessmer
+
 1.3.4 (2020-10-03)
 ------------------
 * Merge pull request `#20 <https://github.com/ipa320/pointcloud_to_laserscan/issues/20>`_ from fmessmer/test_noetic
