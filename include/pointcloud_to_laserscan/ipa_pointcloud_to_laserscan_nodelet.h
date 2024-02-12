@@ -60,7 +60,7 @@ namespace pointcloud_to_laserscan
 {
   typedef tf2_ros::MessageFilter<sensor_msgs::PointCloud2> MessageFilter;
 /**
-* Class to process incoming pointclouds into laserscans. Some initial code was pulled from the defunct turtlebot
+* Class to process incoming point clouds into laserscans. Some initial code was pulled from the defunct turtlebot
 * pointcloud_to_laserscan implementation.
 */
   class IpaPointCloudToLaserScanNodelet : public nodelet::Nodelet

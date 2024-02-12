@@ -84,7 +84,7 @@ void IpaPointCloudToLaserScanNodelet::onInit()
     nh_ = getMTNodeHandle();
   }
 
-    // Only queue one pointcloud per running thread
+    // Only queue one point cloud per running thread
   if (concurrency_level > 0)
   {
     input_queue_size_ = concurrency_level;
@@ -94,28 +94,28 @@ void IpaPointCloudToLaserScanNodelet::onInit()
     input_queue_size_ = boost::thread::hardware_concurrency();
   }
 
-    // if pointcloud target frame specified, we need to filter by transform availability
+  // if point cloud target frame specified, we need to filter by transform availability
   if (!target_frame_.empty())
   {
     tf2_.reset(new tf2_ros::Buffer());
     tf2_listener_.reset(new tf2_ros::TransformListener(*tf2_));
   }
 
+  // set publisher and subscriber callback
   pub_ = nh_.advertise<sensor_msgs::LaserScan>("scan", 10);
-    // set subscriber and callback for input cloud
   sub_ = nh_.subscribe("cloud_in", input_queue_size_, &IpaPointCloudToLaserScanNodelet::cloudCb, this );
 }
 
 void IpaPointCloudToLaserScanNodelet::configure_filter()
 {
   NODELET_DEBUG_STREAM("configuring filter");
-    // Get filter related parameters
 
-  private_nh_.param<bool>("use_outlier_filter", use_outlier_filter_, false);
-
+  // Get filter related parameters
   double max_noise_cluster_distance;
   double cluster_break_distance;
   int max_noise_cluster_size;
+  
+  private_nh_.param<bool>("use_outlier_filter", use_outlier_filter_, false);
   private_nh_.param<double>("max_noise_cluster_distance", max_noise_cluster_distance, 2.0);
   private_nh_.param<double>("cluster_break_distance", cluster_break_distance, 0.3);
   private_nh_.param<int>("max_noise_cluster_size", max_noise_cluster_size, 5);
@@ -126,7 +126,7 @@ void IpaPointCloudToLaserScanNodelet::configure_filter()
 void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPtr &cloud_msg)
 {
   ros::Time start_time = ros::Time::now();
-  NODELET_DEBUG_STREAM("PC with timestamp from init " << cloud_msg->header.stamp.toSec() << " recevied with a delay of " << (start_time - cloud_msg->header.stamp).toSec() << " ");
+  NODELET_DEBUG_STREAM("point cloud with timestamp from init " << cloud_msg->header.stamp.toSec() << " recevied with a delay of " << (start_time - cloud_msg->header.stamp).toSec() << " ");
 
   // remove leading / on frame id in case present, which is not supported by tf2
   // does not do anything if the problem dies not occur -> leave for compatibility
@@ -136,7 +136,7 @@ void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2Cons
     cloud_frame_id.erase(0,1);
   }
 
-  // Get frame tranformation
+  // Get frame transformation
   tf2::Transform T;
 
   if ((!target_frame_.empty()) && !(target_frame_ == cloud_frame_id))
@@ -185,11 +185,11 @@ void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2Cons
   }
   else
   {
-    // Assign scan to almost max range since assign to max_range not allowed by assign oparator
+    // Assign scan to almost max range since assign to max_range not allowed by assign operator
     output.ranges.assign(ranges_size, output.range_max - 0.0001);
   }
 
-  // convert pointcloud to laserscan
+  // convert point cloud to laserscan
   convert_pointcloud_to_laserscan(cloud_msg, output, T, range_min_);
 
   if(use_outlier_filter_)
@@ -199,18 +199,18 @@ void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2Cons
 
   ros::Time end_time = ros::Time::now();
   ros::Duration dur = end_time-start_time;
-  NODELET_DEBUG_STREAM("Transform for PC took " << dur.toSec());
+  NODELET_DEBUG_STREAM("Transform for point cloud took " << dur.toSec());
 
   pub_.publish(output);
-  NODELET_DEBUG_STREAM("Transform and publisch for scan took " << dur.toSec());
+  NODELET_DEBUG_STREAM("Transform and publish for scan took " << dur.toSec());
 }
 
 /**
- * Function to project the pointcloud points within specified region to
+ * Function to project the point cloud points within specified region to
  * the laser scan frame and fill out the laserscan message with the relevant ranges
  * from the projection.
- * Theborders for the point selection is transformed into pointcloud frame in order
- * save time by avoiding unnessecairy point transformations
+ * The borders for the point selection is transformed into point cloud frame in order
+ * save time by avoiding unnecessary point transformations
  */
 void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sensor_msgs::PointCloud2ConstPtr &cloud,
                                                                       sensor_msgs::LaserScan &output,
@@ -244,15 +244,15 @@ void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sens
 
   // Declare help variables
   tf2::Vector3 P;
-  double lambda_x, lambda_y;
   tf2::Vector3 P_max;
   tf2::Vector3 P_min;
+  double lambda_x, lambda_y;
   double border_distance_sqared;
   double range;
   double angle;
   int index;
 
-  // Iterate through pointcloud
+  // Iterate through point cloud
   for (sensor_msgs::PointCloud2ConstIterator<float>
     iter_x(*cloud, "x"), iter_y(*cloud, "y"), iter_z(*cloud, "z");
     iter_x != iter_x.end();
@@ -264,7 +264,7 @@ void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sens
       continue;
     }
 
-    //get reflection point in hight limiting planes in order to check that point lies between borders(above or below is not clearly def):
+    //get reflection point in height limiting planes in order to check that point lies between borders(above or below is not clearly def):
     P.setValue(*iter_x, *iter_y, *iter_z);
 
     /**
@@ -274,7 +274,7 @@ void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sens
      *
      * double lambda_x_max =  (P - A_max_o_frame).dot(ex_o_frame);
      *
-     * For now we assume tahat a common set of lambdas hold:
+     * For now we assume that a common set of lambdas hold:
      */
     lambda_x =  (P - A_target_o_frame).dot(ex_o_frame);
     lambda_y =  (P - A_target_o_frame).dot(ey_o_frame);
