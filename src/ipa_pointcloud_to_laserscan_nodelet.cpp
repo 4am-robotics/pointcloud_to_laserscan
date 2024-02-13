@@ -44,6 +44,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <pluginlib/class_list_macros.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
+#include <angles/angles.h>
 
 #include <iostream>
 
@@ -61,8 +62,6 @@ void IpaPointCloudToLaserScanNodelet::onInit()
   private_nh_.param<double>("min_height", min_height_, 0.0);
   private_nh_.param<double>("max_height", max_height_, 1.0);
 
-  private_nh_.param<double>("angle_min", angle_min_, -M_PI / 2.0);
-  private_nh_.param<double>("angle_max", angle_max_, M_PI / 2.0);
   private_nh_.param<double>("angle_increment", angle_increment_, M_PI / 360.0);
   private_nh_.param<double>("scan_time", scan_time_, 1.0 / 30.0);
   private_nh_.param<double>("range_min", range_min_, 0.45);
@@ -101,9 +100,12 @@ void IpaPointCloudToLaserScanNodelet::onInit()
     tf2_listener_.reset(new tf2_ros::TransformListener(*tf2_));
   }
 
-  // set publisher and subscriber callback
+  // set publisher and subscriber callback of laserscan and point cloud
   pub_ = nh_.advertise<sensor_msgs::LaserScan>("scan", 10);
   sub_ = nh_.subscribe("cloud_in", input_queue_size_, &IpaPointCloudToLaserScanNodelet::cloudCb, this );
+
+  // subscribe to camera_info of depth image
+  camera_info_sub_ = nh_.subscribe("camera_info", input_queue_size_, &IpaPointCloudToLaserScanNodelet::cameraInfoCb, this );
 }
 
 void IpaPointCloudToLaserScanNodelet::configure_filter()
@@ -121,6 +123,18 @@ void IpaPointCloudToLaserScanNodelet::configure_filter()
   private_nh_.param<int>("max_noise_cluster_size", max_noise_cluster_size, 5);
 
   outlier_filter_.configure(cluster_break_distance, max_noise_cluster_size, max_noise_cluster_distance);
+}
+
+void IpaPointCloudToLaserScanNodelet::cameraInfoCb(const sensor_msgs::CameraInfo &camera_info_msg)
+{ 
+
+  // calculate field of view from camera_info topic
+  std::size_t fx = camera_info_msg.K[0];
+  std::size_t fy = camera_info_msg.K[4];
+
+  angle_max_ = atan2(camera_info_msg.width, 2*fx);
+  angle_min_ = -atan2(camera_info_msg.width, 2*fx);
+
 }
 
 void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPtr &cloud_msg)
@@ -293,7 +307,9 @@ void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sens
       continue;
     }
 
-    angle = atan2(lambda_y, lambda_x);
+    angle = angles::normalize_angle_positive(atan2(lambda_y, lambda_x));
+    // std::cout << "angle: " << angle << std::endl;
+    // angle = atan2(lambda_y, lambda_x);
     if (angle < output.angle_min || angle > output.angle_max)
     {
       continue;

@@ -53,6 +53,7 @@
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include "sensor_msgs/PointCloud2.h"
+#include "sensor_msgs/CameraInfo.h"
 #include <pointcloud_to_laserscan/scan_outlier_removal_filter.h>
 
 
@@ -74,6 +75,7 @@ namespace pointcloud_to_laserscan
     virtual void onInit();
 
     void cloudCb(const sensor_msgs::PointCloud2ConstPtr &cloud_msg);
+    void cameraInfoCb(const sensor_msgs::CameraInfo &camera_info_msg);
 
     void convert_pointcloud_to_laserscan(const sensor_msgs::PointCloud2ConstPtr &cloud, sensor_msgs::LaserScan &output, const tf2::Transform &T, const double range_min );
 
@@ -85,8 +87,10 @@ namespace pointcloud_to_laserscan
     boost::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
     ros::Subscriber sub_;
+    ros::Subscriber camera_info_sub_;
 
     scan_outlier_filter::ScanOutlierRemovalFilter outlier_filter_;
+
     // ROS Parameters
     unsigned int input_queue_size_;
     std::string target_frame_;
