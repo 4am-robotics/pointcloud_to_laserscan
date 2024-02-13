@@ -149,7 +149,7 @@ void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2Cons
     }
     catch (tf2::TransformException ex)
     {
-      NODELET_DEBUG_STREAM("Transform failure: " << ex.what());
+      NODELET_WARN_STREAM("Transform failure: " << ex.what());
       return;
     }
   }
