@@ -2,6 +2,17 @@
 Changelog for package pointcloud_to_laserscan
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#24 <https://github.com/4am-robotics/pointcloud_to_laserscan/issues/24>`_ from fmessmer/migrate_ipa320
+  reduce dependencies
+* remove obsolete code
+* remove dependency openni
+* Merge pull request `#23 <https://github.com/4am-robotics/pointcloud_to_laserscan/issues/23>`_ from fmessmer/ci/gha
+  migrate ci to gha
+* migrate ci to gha
+* Contributors: Felix Messmer, fmessmer
+
 1.3.5 (2021-04-06)
 ------------------
 * Merge pull request `#22 <https://github.com/ipa320/pointcloud_to_laserscan/issues/22>`_ from fmessmer/fix/TF_REPEATED_DATA
