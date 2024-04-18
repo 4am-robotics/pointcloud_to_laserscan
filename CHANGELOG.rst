@@ -2,6 +2,9 @@
 Changelog for package pointcloud_to_laserscan
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.3.6 (2024-02-19)
 ------------------
 * Merge pull request `#24 <https://github.com/4am-robotics/pointcloud_to_laserscan/issues/24>`_ from fmessmer/migrate_ipa320
