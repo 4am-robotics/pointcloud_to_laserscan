@@ -128,13 +128,42 @@ void IpaPointCloudToLaserScanNodelet::configure_filter()
 void IpaPointCloudToLaserScanNodelet::cameraInfoCb(const sensor_msgs::CameraInfo &camera_info_msg)
 { 
 
-  // calculate field of view from camera_info topic
-  std::size_t fx = camera_info_msg.K[0];
-  std::size_t fy = camera_info_msg.K[4];
+  geometry_msgs::PointStamped P_min_c, P_max_c; // min and max points of FOV in camera_frame
+  geometry_msgs::PointStamped P_min_t, P_max_t; // min and max points of FOV in target_frame
 
-  angle_max_ = atan2(camera_info_msg.width, 2*fx);
-  angle_min_ = -atan2(camera_info_msg.width, 2*fx);
+  {
+    std::lock_guard<std::mutex> lock(fov_mutex);
+    P_max_c.point.x = fov_max.x();
+    P_max_c.point.y = fov_max.y();
+    P_max_c.point.z = fov_max.z();
 
+    P_min_c.point.x = fov_min.x();
+    P_min_c.point.y = fov_min.y();
+    P_min_c.point.z = fov_min.z();
+    
+    // std::cout << "MAX POINT: " << fov_max.x() << ", " << fov_max.y() << ", " << fov_max.z() << ", " << std::endl;
+    // std::cout << "MIN POINT: " << fov_min.x() << ", " << fov_min.y() << ", " << fov_min.z() << ", " << std::endl;
+  }
+
+  P_max_c.header.frame_id = camera_info_msg.header.frame_id;
+  P_min_c.header.frame_id = camera_info_msg.header.frame_id;
+  try
+  {
+    tf2_->transform(P_max_c, P_max_t, target_frame_);
+    tf2_->transform(P_min_c, P_min_t, target_frame_);
+  }
+  catch (tf2::TransformException &ex)
+  {
+    NODELET_WARN_STREAM("Transform failure: " << ex.what());
+  }
+    
+  // calculate FOV angle in x-y plane of target_frame
+  {  
+    std::lock_guard<std::mutex> lock(angle_mutex);
+    angle_max_ = angles::normalize_angle_positive(atan2(P_max_t.point.y, P_max_t.point.x));
+    angle_min_ = angles::normalize_angle_positive(atan2(P_min_t.point.y, P_min_t.point.x));
+    // std::cout << "ANGLES: " << angle_max_ << ", " << angle_min_ << std::endl;
+  }
 }
 
 void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPtr &cloud_msg)
@@ -163,7 +192,7 @@ void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2Cons
     }
     catch (tf2::TransformException ex)
     {
-      NODELET_WARN_STREAM("Transform failure: " << ex.what());
+      NODELET_WARN_STREAM("Transform failure [cloud_in]: " << ex.what());
       return;
     }
   }
@@ -181,8 +210,11 @@ void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2Cons
     output.header.frame_id = target_frame_;
   }
 
-  output.angle_min = angle_min_;
-  output.angle_max = angle_max_;
+  {
+    std::lock_guard<std::mutex> lock(angle_mutex);
+    output.angle_min = angle_min_;
+    output.angle_max = angle_max_;
+  }
   output.angle_increment = angle_increment_;
   output.time_increment = 0.0;
   output.scan_time = scan_time_;
@@ -266,6 +298,10 @@ void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sens
   double angle;
   int index;
 
+  // reset fov extremal points
+  fov_max.setValue(-1e3, -1e3, -1e3);
+  fov_min.setValue(1e3, 1e3, 1e3);
+
   // Iterate through point cloud
   for (sensor_msgs::PointCloud2ConstIterator<float>
     iter_x(*cloud, "x"), iter_y(*cloud, "y"), iter_z(*cloud, "z");
@@ -274,8 +310,21 @@ void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sens
   {
     if (std::isnan(*iter_x) || std::isnan(*iter_y) || std::isnan(*iter_z))
     {
-      NODELET_DEBUG("rejected for nan in point(%f, %f, %f)\n", *iter_x, *iter_y, *iter_z);
+      // NODELET_DEBUG("rejected for nan in point(%f, %f, %f)\n", *iter_x, *iter_y, *iter_z);
       continue;
+    }
+
+    // check if furthest point on y axis
+    // std::cout << "CHECKING POINT: " << *iter_x << ", " << *iter_y << ", " << *iter_z << ", " << std::endl;
+    if (*iter_y > fov_max.y()) {
+      std::lock_guard<std::mutex> lock(fov_mutex);
+      fov_max.setValue(*iter_x, *iter_y, *iter_z);
+      // std::cout << "SET POINT: " << *iter_x << ", " << *iter_y << ", " << *iter_z << ", " << std::endl;
+    }
+    if (*iter_y < fov_min.y()) {
+      std::lock_guard<std::mutex> lock(fov_mutex);
+      fov_min.setValue(*iter_x, *iter_y, *iter_z);
+      // std::cout << "SET POINT: " << *iter_x << ", " << *iter_y << ", " << *iter_z << ", " << std::endl;
     }
 
     //get reflection point in height limiting planes in order to check that point lies between borders(above or below is not clearly def):
