@@ -2,8 +2,8 @@
 Changelog for package pointcloud_to_laserscan
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.3.8 (2024-08-05)
+------------------
 * Merge pull request `#26 <https://github.com/4am-robotics/pointcloud_to_laserscan/issues/26>`_ from ConstantConstantin/patch-1
   add dependabot for github-actions
 * add dependabot for github-actions
