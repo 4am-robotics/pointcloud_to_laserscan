@@ -44,6 +44,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <pluginlib/class_list_macros.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
+#include <angles/angles.h>
 
 #include <iostream>
 
@@ -61,8 +62,6 @@ void IpaPointCloudToLaserScanNodelet::onInit()
   private_nh_.param<double>("min_height", min_height_, 0.0);
   private_nh_.param<double>("max_height", max_height_, 1.0);
 
-  private_nh_.param<double>("angle_min", angle_min_, -M_PI / 2.0);
-  private_nh_.param<double>("angle_max", angle_max_, M_PI / 2.0);
   private_nh_.param<double>("angle_increment", angle_increment_, M_PI / 360.0);
   private_nh_.param<double>("scan_time", scan_time_, 1.0 / 30.0);
   private_nh_.param<double>("range_min", range_min_, 0.45);
@@ -84,7 +83,7 @@ void IpaPointCloudToLaserScanNodelet::onInit()
     nh_ = getMTNodeHandle();
   }
 
-    // Only queue one pointcloud per running thread
+    // Only queue one point cloud per running thread
   if (concurrency_level > 0)
   {
     input_queue_size_ = concurrency_level;
@@ -94,28 +93,31 @@ void IpaPointCloudToLaserScanNodelet::onInit()
     input_queue_size_ = boost::thread::hardware_concurrency();
   }
 
-    // if pointcloud target frame specified, we need to filter by transform availability
+  // if point cloud target frame specified, we need to filter by transform availability
   if (!target_frame_.empty())
   {
     tf2_.reset(new tf2_ros::Buffer());
     tf2_listener_.reset(new tf2_ros::TransformListener(*tf2_));
   }
 
+  // set publisher and subscriber callback of laserscan and point cloud
   pub_ = nh_.advertise<sensor_msgs::LaserScan>("scan", 10);
-    // set subscriber and callback for input cloud
   sub_ = nh_.subscribe("cloud_in", input_queue_size_, &IpaPointCloudToLaserScanNodelet::cloudCb, this );
+
+  // subscribe to camera_info of depth image
+  camera_info_sub_ = nh_.subscribe("camera_info", input_queue_size_, &IpaPointCloudToLaserScanNodelet::cameraInfoCb, this );
 }
 
 void IpaPointCloudToLaserScanNodelet::configure_filter()
 {
   NODELET_DEBUG_STREAM("configuring filter");
-    // Get filter related parameters
 
-  private_nh_.param<bool>("use_outlier_filter", use_outlier_filter_, false);
-
+  // Get filter related parameters
   double max_noise_cluster_distance;
   double cluster_break_distance;
   int max_noise_cluster_size;
+  
+  private_nh_.param<bool>("use_outlier_filter", use_outlier_filter_, false);
   private_nh_.param<double>("max_noise_cluster_distance", max_noise_cluster_distance, 2.0);
   private_nh_.param<double>("cluster_break_distance", cluster_break_distance, 0.3);
   private_nh_.param<int>("max_noise_cluster_size", max_noise_cluster_size, 5);
@@ -123,10 +125,45 @@ void IpaPointCloudToLaserScanNodelet::configure_filter()
   outlier_filter_.configure(cluster_break_distance, max_noise_cluster_size, max_noise_cluster_distance);
 }
 
+void IpaPointCloudToLaserScanNodelet::cameraInfoCb(const sensor_msgs::CameraInfo &camera_info_msg)
+{ 
+  std::lock_guard<std::mutex> lock(fov_mutex);
+  geometry_msgs::PointStamped P_min_c, P_max_c; // min and max points of FOV in camera_frame
+  geometry_msgs::PointStamped P_min_t, P_max_t; // min and max points of FOV in target_frame
+
+  P_max_c.point.x = fov_max.x();
+  P_max_c.point.y = fov_max.y();
+  P_max_c.point.z = fov_max.z();
+
+  P_min_c.point.x = fov_min.x();
+  P_min_c.point.y = fov_min.y();
+  P_min_c.point.z = fov_min.z();
+  
+  // std::cout << "MAX POINT: " << fov_max.x() << ", " << fov_max.y() << ", " << fov_max.z() << ", " << std::endl;
+  // std::cout << "MIN POINT: " << fov_min.x() << ", " << fov_min.y() << ", " << fov_min.z() << ", " << std::endl;
+
+  P_max_c.header.frame_id = camera_info_msg.header.frame_id;
+  P_min_c.header.frame_id = camera_info_msg.header.frame_id;
+  try
+  {
+    tf2_->transform(P_max_c, P_max_t, target_frame_);
+    tf2_->transform(P_min_c, P_min_t, target_frame_);
+  }
+  catch (tf2::TransformException &ex)
+  {
+    NODELET_WARN_STREAM("Transform failure: " << ex.what());
+  }
+    
+  // calculate FOV angle in x-y plane of target_frame
+  angle_max_ = angles::normalize_angle_positive(atan2(P_max_t.point.y, P_max_t.point.x));
+  angle_min_ = angles::normalize_angle_positive(atan2(P_min_t.point.y, P_min_t.point.x));
+  // std::cout << "ANGLES: " << angle_max_ << ", " << angle_min_ << std::endl;
+}
+
 void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPtr &cloud_msg)
 {
   ros::Time start_time = ros::Time::now();
-  NODELET_DEBUG_STREAM("PC with timestamp from init " << cloud_msg->header.stamp.toSec() << " recevied with a delay of " << (start_time - cloud_msg->header.stamp).toSec() << " ");
+  NODELET_DEBUG_STREAM("point cloud with timestamp from init " << cloud_msg->header.stamp.toSec() << " recevied with a delay of " << (start_time - cloud_msg->header.stamp).toSec() << " ");
 
   // remove leading / on frame id in case present, which is not supported by tf2
   // does not do anything if the problem dies not occur -> leave for compatibility
@@ -136,7 +173,7 @@ void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2Cons
     cloud_frame_id.erase(0,1);
   }
 
-  // Get frame tranformation
+  // Get frame transformation
   tf2::Transform T;
 
   if ((!target_frame_.empty()) && !(target_frame_ == cloud_frame_id))
@@ -149,7 +186,7 @@ void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2Cons
     }
     catch (tf2::TransformException ex)
     {
-      NODELET_DEBUG_STREAM("Transform failure: " << ex.what());
+      NODELET_WARN_STREAM("Transform failure [cloud_in]: " << ex.what());
       return;
     }
   }
@@ -185,11 +222,11 @@ void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2Cons
   }
   else
   {
-    // Assign scan to almost max range since assign to max_range not allowed by assign oparator
+    // Assign scan to almost max range since assign to max_range not allowed by assign operator
     output.ranges.assign(ranges_size, output.range_max - 0.0001);
   }
 
-  // convert pointcloud to laserscan
+  // convert point cloud to laserscan
   convert_pointcloud_to_laserscan(cloud_msg, output, T, range_min_);
 
   if(use_outlier_filter_)
@@ -199,23 +236,24 @@ void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2Cons
 
   ros::Time end_time = ros::Time::now();
   ros::Duration dur = end_time-start_time;
-  NODELET_DEBUG_STREAM("Transform for PC took " << dur.toSec());
+  NODELET_DEBUG_STREAM("Transform for point cloud took " << dur.toSec());
 
   pub_.publish(output);
-  NODELET_DEBUG_STREAM("Transform and publisch for scan took " << dur.toSec());
+  NODELET_DEBUG_STREAM("Transform and publish for scan took " << dur.toSec());
 }
 
 /**
- * Function to project the pointcloud points within specified region to
+ * Function to project the point cloud points within specified region to
  * the laser scan frame and fill out the laserscan message with the relevant ranges
  * from the projection.
- * Theborders for the point selection is transformed into pointcloud frame in order
- * save time by avoiding unnessecairy point transformations
+ * The borders for the point selection is transformed into point cloud frame in order
+ * save time by avoiding unnecessary point transformations
  */
 void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sensor_msgs::PointCloud2ConstPtr &cloud,
                                                                       sensor_msgs::LaserScan &output,
                                                                       const tf2::Transform &T, const double range_min )
 {
+  std::lock_guard<std::mutex> lock(fov_mutex);
   // Transform borders and target plane to original coordinates (saved resources to not have to transform the whole point cloud)
   // A plane is described by all points fulfilling p= A + l1*e1 + l2*e2.
   // Transformation to other coordinate frame with transformation T gives: p'= T(A) + l1*T(e1) + l2*T(e2)
@@ -244,15 +282,19 @@ void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sens
 
   // Declare help variables
   tf2::Vector3 P;
-  double lambda_x, lambda_y;
   tf2::Vector3 P_max;
   tf2::Vector3 P_min;
+  double lambda_x, lambda_y;
   double border_distance_sqared;
   double range;
   double angle;
   int index;
 
-  // Iterate through pointcloud
+  // reset fov extremal points
+  fov_max.setValue(-1e3, -1e3, -1e3);
+  fov_min.setValue(1e3, 1e3, 1e3);
+
+  // Iterate through point cloud
   for (sensor_msgs::PointCloud2ConstIterator<float>
     iter_x(*cloud, "x"), iter_y(*cloud, "y"), iter_z(*cloud, "z");
     iter_x != iter_x.end();
@@ -260,11 +302,22 @@ void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sens
   {
     if (std::isnan(*iter_x) || std::isnan(*iter_y) || std::isnan(*iter_z))
     {
-      NODELET_DEBUG("rejected for nan in point(%f, %f, %f)\n", *iter_x, *iter_y, *iter_z);
+      // NODELET_DEBUG("rejected for nan in point(%f, %f, %f)\n", *iter_x, *iter_y, *iter_z);
       continue;
     }
 
-    //get reflection point in hight limiting planes in order to check that point lies between borders(above or below is not clearly def):
+    // check if furthest point on y axis
+    // std::cout << "CHECKING POINT: " << *iter_x << ", " << *iter_y << ", " << *iter_z << ", " << std::endl;
+    if (*iter_y > fov_max.y()) {
+      fov_max.setValue(*iter_x, *iter_y, *iter_z);
+      // std::cout << "SET POINT: " << *iter_x << ", " << *iter_y << ", " << *iter_z << ", " << std::endl;
+    }
+    if (*iter_y < fov_min.y()) {
+      fov_min.setValue(*iter_x, *iter_y, *iter_z);
+      // std::cout << "SET POINT: " << *iter_x << ", " << *iter_y << ", " << *iter_z << ", " << std::endl;
+    }
+
+    //get reflection point in height limiting planes in order to check that point lies between borders(above or below is not clearly def):
     P.setValue(*iter_x, *iter_y, *iter_z);
 
     /**
@@ -274,7 +327,7 @@ void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sens
      *
      * double lambda_x_max =  (P - A_max_o_frame).dot(ex_o_frame);
      *
-     * For now we assume tahat a common set of lambdas hold:
+     * For now we assume that a common set of lambdas hold:
      */
     lambda_x =  (P - A_target_o_frame).dot(ex_o_frame);
     lambda_y =  (P - A_target_o_frame).dot(ey_o_frame);
@@ -293,7 +346,9 @@ void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sens
       continue;
     }
 
-    angle = atan2(lambda_y, lambda_x);
+    angle = angles::normalize_angle_positive(atan2(lambda_y, lambda_x));
+    // std::cout << "angle: " << angle << std::endl;
+    // angle = atan2(lambda_y, lambda_x);
     if (angle < output.angle_min || angle > output.angle_max)
     {
       continue;

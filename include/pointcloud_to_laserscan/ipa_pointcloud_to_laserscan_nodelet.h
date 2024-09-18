@@ -53,6 +53,7 @@
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include "sensor_msgs/PointCloud2.h"
+#include "sensor_msgs/CameraInfo.h"
 #include <pointcloud_to_laserscan/scan_outlier_removal_filter.h>
 
 
@@ -60,7 +61,7 @@ namespace pointcloud_to_laserscan
 {
   typedef tf2_ros::MessageFilter<sensor_msgs::PointCloud2> MessageFilter;
 /**
-* Class to process incoming pointclouds into laserscans. Some initial code was pulled from the defunct turtlebot
+* Class to process incoming point clouds into laserscans. Some initial code was pulled from the defunct turtlebot
 * pointcloud_to_laserscan implementation.
 */
   class IpaPointCloudToLaserScanNodelet : public nodelet::Nodelet
@@ -74,6 +75,7 @@ namespace pointcloud_to_laserscan
     virtual void onInit();
 
     void cloudCb(const sensor_msgs::PointCloud2ConstPtr &cloud_msg);
+    void cameraInfoCb(const sensor_msgs::CameraInfo &camera_info_msg);
 
     void convert_pointcloud_to_laserscan(const sensor_msgs::PointCloud2ConstPtr &cloud, sensor_msgs::LaserScan &output, const tf2::Transform &T, const double range_min );
 
@@ -85,8 +87,10 @@ namespace pointcloud_to_laserscan
     boost::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
 
     ros::Subscriber sub_;
+    ros::Subscriber camera_info_sub_;
 
     scan_outlier_filter::ScanOutlierRemovalFilter outlier_filter_;
+
     // ROS Parameters
     unsigned int input_queue_size_;
     std::string target_frame_;
@@ -94,6 +98,8 @@ namespace pointcloud_to_laserscan
     double min_height_, max_height_, angle_min_, angle_max_, angle_increment_, scan_time_, range_min_, range_max_;
     bool use_inf_;
     bool use_outlier_filter_;
+    tf2::Vector3 fov_max, fov_min;
+    std::mutex fov_mutex;
   };
 
 }  // pointcloud_to_laserscan
