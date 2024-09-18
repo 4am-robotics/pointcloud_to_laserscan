@@ -99,7 +99,7 @@ namespace pointcloud_to_laserscan
     bool use_inf_;
     bool use_outlier_filter_;
     tf2::Vector3 fov_max, fov_min;
-    std::mutex fov_mutex, angle_mutex;
+    std::mutex fov_mutex;
   };
 
 }  // pointcloud_to_laserscan

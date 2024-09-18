@@ -127,23 +127,20 @@ void IpaPointCloudToLaserScanNodelet::configure_filter()
 
 void IpaPointCloudToLaserScanNodelet::cameraInfoCb(const sensor_msgs::CameraInfo &camera_info_msg)
 { 
-
+  std::lock_guard<std::mutex> lock(fov_mutex);
   geometry_msgs::PointStamped P_min_c, P_max_c; // min and max points of FOV in camera_frame
   geometry_msgs::PointStamped P_min_t, P_max_t; // min and max points of FOV in target_frame
 
-  {
-    std::lock_guard<std::mutex> lock(fov_mutex);
-    P_max_c.point.x = fov_max.x();
-    P_max_c.point.y = fov_max.y();
-    P_max_c.point.z = fov_max.z();
+  P_max_c.point.x = fov_max.x();
+  P_max_c.point.y = fov_max.y();
+  P_max_c.point.z = fov_max.z();
 
-    P_min_c.point.x = fov_min.x();
-    P_min_c.point.y = fov_min.y();
-    P_min_c.point.z = fov_min.z();
-    
-    // std::cout << "MAX POINT: " << fov_max.x() << ", " << fov_max.y() << ", " << fov_max.z() << ", " << std::endl;
-    // std::cout << "MIN POINT: " << fov_min.x() << ", " << fov_min.y() << ", " << fov_min.z() << ", " << std::endl;
-  }
+  P_min_c.point.x = fov_min.x();
+  P_min_c.point.y = fov_min.y();
+  P_min_c.point.z = fov_min.z();
+  
+  // std::cout << "MAX POINT: " << fov_max.x() << ", " << fov_max.y() << ", " << fov_max.z() << ", " << std::endl;
+  // std::cout << "MIN POINT: " << fov_min.x() << ", " << fov_min.y() << ", " << fov_min.z() << ", " << std::endl;
 
   P_max_c.header.frame_id = camera_info_msg.header.frame_id;
   P_min_c.header.frame_id = camera_info_msg.header.frame_id;
@@ -158,12 +155,9 @@ void IpaPointCloudToLaserScanNodelet::cameraInfoCb(const sensor_msgs::CameraInfo
   }
     
   // calculate FOV angle in x-y plane of target_frame
-  {  
-    std::lock_guard<std::mutex> lock(angle_mutex);
-    angle_max_ = angles::normalize_angle_positive(atan2(P_max_t.point.y, P_max_t.point.x));
-    angle_min_ = angles::normalize_angle_positive(atan2(P_min_t.point.y, P_min_t.point.x));
-    // std::cout << "ANGLES: " << angle_max_ << ", " << angle_min_ << std::endl;
-  }
+  angle_max_ = angles::normalize_angle_positive(atan2(P_max_t.point.y, P_max_t.point.x));
+  angle_min_ = angles::normalize_angle_positive(atan2(P_min_t.point.y, P_min_t.point.x));
+  // std::cout << "ANGLES: " << angle_max_ << ", " << angle_min_ << std::endl;
 }
 
 void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPtr &cloud_msg)
@@ -210,11 +204,8 @@ void IpaPointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2Cons
     output.header.frame_id = target_frame_;
   }
 
-  {
-    std::lock_guard<std::mutex> lock(angle_mutex);
-    output.angle_min = angle_min_;
-    output.angle_max = angle_max_;
-  }
+  output.angle_min = angle_min_;
+  output.angle_max = angle_max_;
   output.angle_increment = angle_increment_;
   output.time_increment = 0.0;
   output.scan_time = scan_time_;
@@ -262,6 +253,7 @@ void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sens
                                                                       sensor_msgs::LaserScan &output,
                                                                       const tf2::Transform &T, const double range_min )
 {
+  std::lock_guard<std::mutex> lock(fov_mutex);
   // Transform borders and target plane to original coordinates (saved resources to not have to transform the whole point cloud)
   // A plane is described by all points fulfilling p= A + l1*e1 + l2*e2.
   // Transformation to other coordinate frame with transformation T gives: p'= T(A) + l1*T(e1) + l2*T(e2)
@@ -317,12 +309,10 @@ void IpaPointCloudToLaserScanNodelet::convert_pointcloud_to_laserscan(const sens
     // check if furthest point on y axis
     // std::cout << "CHECKING POINT: " << *iter_x << ", " << *iter_y << ", " << *iter_z << ", " << std::endl;
     if (*iter_y > fov_max.y()) {
-      std::lock_guard<std::mutex> lock(fov_mutex);
       fov_max.setValue(*iter_x, *iter_y, *iter_z);
       // std::cout << "SET POINT: " << *iter_x << ", " << *iter_y << ", " << *iter_z << ", " << std::endl;
     }
     if (*iter_y < fov_min.y()) {
-      std::lock_guard<std::mutex> lock(fov_mutex);
       fov_min.setValue(*iter_x, *iter_y, *iter_z);
       // std::cout << "SET POINT: " << *iter_x << ", " << *iter_y << ", " << *iter_z << ", " << std::endl;
     }
