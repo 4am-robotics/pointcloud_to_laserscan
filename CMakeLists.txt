@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(pointcloud_to_laserscan)
 
 find_package(catkin REQUIRED COMPONENTS
+  angles
   message_filters
   nodelet
   pcl_ros
